@@ -15,14 +15,7 @@ import { SignaturePad } from './components/SignaturePad';
 import { SuccessScreen } from './components/SuccessScreen';
 import { ServiceNowAPI } from './services/serviceNowAPI';
 import { VisitorData } from './types';
-
-// TODO: Move this to a config file - see config.example.ts
-const SERVICE_NOW_CONFIG = {
-  instanceUrl: 'https://YOUR_INSTANCE.service-now.com',
-  username: 'YOUR_USERNAME',
-  password: 'YOUR_PASSWORD',
-  tableName: 'u_visitor_log',
-};
+import { SERVICE_NOW_CONFIG } from './config';
 
 export default function App() {
   const [visitorName, setVisitorName] = useState('');
@@ -32,6 +25,7 @@ export default function App() {
   const [signature, setSignature] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
 
   const handleSignatureComplete = (signatureData: string) => {
     setSignature(signatureData);
@@ -62,10 +56,15 @@ export default function App() {
   };
 
   const handleSubmit = async () => {
+    console.log('Submit button clicked');
+    console.log('Form data:', { visitorName, visitingPerson, purpose, phoneNumber, hasSignature: !!signature });
+    
     if (!validateForm()) {
+      console.log('Form validation failed');
       return;
     }
 
+    console.log('Form validated, starting submission...');
     setIsSubmitting(true);
 
     try {
@@ -77,13 +76,16 @@ export default function App() {
         signature,
       };
 
+      console.log('Creating ServiceNow API instance...');
       const api = new ServiceNowAPI(SERVICE_NOW_CONFIG);
+      console.log('Submitting visitor sign-in...');
       const result = await api.submitVisitorSignIn(visitorData);
 
       console.log('Submission successful:', result);
       setShowSuccess(true);
     } catch (error) {
       console.error('Submission error:', error);
+      console.error('Error details:', error);
       Alert.alert(
         'Error',
         'Failed to submit sign-in. Please check your connection and try again.'
@@ -111,7 +113,11 @@ export default function App() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={scrollEnabled}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Visitor Sign-In</Text>
           <Text style={styles.subtitle}>Please complete all fields</Text>
@@ -152,10 +158,16 @@ export default function App() {
             onChangeText={setPhoneNumber}
             placeholder="(555) 123-4567"
             keyboardType="phone-pad"
+            returnKeyType="done"
+            blurOnSubmit={true}
           />
 
           <Text style={styles.label}>Signature *</Text>
-          <SignaturePad onSignatureComplete={handleSignatureComplete} />
+          <SignaturePad 
+            onSignatureComplete={handleSignatureComplete}
+            onDrawStart={() => setScrollEnabled(false)}
+            onDrawEnd={() => setScrollEnabled(true)}
+          />
 
           <TouchableOpacity
             style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
@@ -224,18 +236,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   submitButton: {
-    backgroundColor: '#2196F3',
-    padding: 18,
-    borderRadius: 8,
+    backgroundColor: '#374151',
+    padding: 16,
+    borderRadius: 6,
     alignItems: 'center',
     marginTop: 30,
   },
   submitButtonDisabled: {
-    backgroundColor: '#999',
+    backgroundColor: '#D1D5DB',
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '600',
   },
 });

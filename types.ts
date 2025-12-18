@@ -14,11 +14,12 @@ export interface ServiceNowConfig {
 }
 
 export interface ServiceNowRecord {
-  u_visitor_name?: string;
+  u_vistor_name?: string;
   u_visiting_person?: string;
   u_purpose?: string;
   u_phone_number?: string;
   u_sign_in_time?: string;
+  u_signature?: string; // Base64 image data for image field
 }
 
 export interface ServiceNowResponse {

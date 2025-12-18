@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import SignatureCanvas from 'react-native-signature-canvas';
+import SignatureCanvas from 'react-signature-canvas';
 
 interface SignaturePadProps {
   onSignatureComplete: (signature: string) => void;
@@ -8,50 +8,50 @@ interface SignaturePadProps {
   onDrawEnd?: () => void;
 }
 
-export const SignaturePad: React.FC<SignaturePadProps> = ({ onSignatureComplete, onDrawStart, onDrawEnd }) => {
-  const signatureRef = useRef<any>(null);
-
-  const handleSignature = (signature: string) => {
-    onSignatureComplete(signature);
-  };
+export const SignaturePad: React.FC<SignaturePadProps> = ({ 
+  onSignatureComplete, 
+  onDrawStart, 
+  onDrawEnd 
+}) => {
+  const signatureRef = useRef<SignatureCanvas>(null);
+  const [isEmpty, setIsEmpty] = useState(true);
 
   const handleClear = () => {
-    signatureRef.current?.clearSignature();
+    signatureRef.current?.clear();
+    setIsEmpty(true);
+    onSignatureComplete('');
   };
 
   const handleConfirm = () => {
-    signatureRef.current?.readSignature();
+    if (signatureRef.current && !signatureRef.current.isEmpty()) {
+      const dataUrl = signatureRef.current.toDataURL('image/png');
+      onSignatureComplete(dataUrl);
+    }
   };
 
-  const style = `.m-signature-pad {
-    box-shadow: none;
-    border: none;
-  }
-  .m-signature-pad--body {
-    border: none;
-  }
-  .m-signature-pad--footer {
-    display: none;
-  }
-  body,html {
-    width: 100%;
-    height: 100%;
-  }`;
+  const handleBegin = () => {
+    setIsEmpty(false);
+    onDrawStart?.();
+  };
+
+  const handleEnd = () => {
+    onDrawEnd?.();
+  };
 
   return (
-    <View style={styles.container} onStartShouldSetResponder={() => true}>
+    <View style={styles.container}>
       <View style={styles.signatureContainer}>
         <SignatureCanvas
           ref={signatureRef}
-          onOK={handleSignature}
-          onBegin={onDrawStart}
-          onEnd={onDrawEnd}
-          descriptionText="Sign here"
-          clearText="Clear"
-          confirmText="Save"
-          webStyle={style}
-          autoClear={false}
-          imageType="image/png"
+          onBegin={handleBegin}
+          onEnd={handleEnd}
+          canvasProps={{
+            style: {
+              width: '100%',
+              height: '100%',
+              border: 'none',
+            }
+          }}
           backgroundColor="#FFFFFF"
         />
       </View>
@@ -59,7 +59,11 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSignatureComplete,
         <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
           <Text style={styles.clearButtonText}>Clear</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
+        <TouchableOpacity 
+          style={[styles.confirmButton, isEmpty && styles.confirmButtonDisabled]} 
+          onPress={handleConfirm}
+          disabled={isEmpty}
+        >
           <Text style={styles.buttonText}>Confirm Signature</Text>
         </TouchableOpacity>
       </View>
@@ -79,6 +83,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     borderRadius: 8,
     backgroundColor: '#fff',
+    overflow: 'hidden',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -102,6 +107,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginLeft: 5,
     alignItems: 'center',
+  },
+  confirmButtonDisabled: {
+    backgroundColor: '#9CA3AF',
   },
   buttonText: {
     color: '#fff',
