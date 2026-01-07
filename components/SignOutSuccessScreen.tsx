@@ -1,27 +1,46 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 
-interface SuccessScreenProps {
+interface SignOutSuccessScreenProps {
   visitorName: string;
-  onNewVisitor: () => void;
+  googleReviewUrl: string | null;
   onDone: () => void;
 }
 
-export const SuccessScreen: React.FC<SuccessScreenProps> = ({ visitorName, onNewVisitor, onDone }) => {
+export const SignOutSuccessScreen: React.FC<SignOutSuccessScreenProps> = ({ 
+  visitorName,
+  googleReviewUrl,
+  onDone 
+}) => {
+  const handleReviewPress = () => {
+    if (googleReviewUrl) {
+      Linking.openURL(googleReviewUrl).catch(err => {
+        console.error('Failed to open review URL:', err);
+      });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.successBox}>
         <Text style={styles.checkmark}>✓</Text>
-        <Text style={styles.title}>Sign-In Complete!</Text>
+        <Text style={styles.title}>Sign-Out Complete!</Text>
         <Text style={styles.message}>
           Thank you, {visitorName}!{'\n'}
-          Your visit has been recorded.
+          Your departure has been recorded.
         </Text>
-        <TouchableOpacity style={styles.button} onPress={onNewVisitor}>
-          <Text style={styles.buttonText}>Sign In Another Visitor</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.doneButton} onPress={onDone}>
-          <Text style={styles.doneButtonText}>Done</Text>
+        
+        {googleReviewUrl && (
+          <TouchableOpacity 
+            style={styles.reviewButton} 
+            onPress={handleReviewPress}
+          >
+            <Text style={styles.reviewButtonText}>⭐ Leave a Review</Text>
+          </TouchableOpacity>
+        )}
+        
+        <TouchableOpacity style={styles.button} onPress={onDone}>
+          <Text style={styles.buttonText}>Done</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -64,8 +83,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
     lineHeight: 26,
+  },
+  reviewButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+    width: '100%',
+    alignItems: 'center',
+  },
+  reviewButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   button: {
     backgroundColor: '#2196F3',
@@ -76,20 +109,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  doneButton: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#2196F3',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 15,
-  },
-  doneButtonText: {
-    color: '#2196F3',
     fontSize: 16,
     fontWeight: 'bold',
   },

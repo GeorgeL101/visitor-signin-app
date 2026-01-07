@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,21 +11,81 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import * as ExpoLocation from 'expo-location';
 import { SignaturePad } from './components/SignaturePad';
 import { SuccessScreen } from './components/SuccessScreen';
+import { SignOutScreen } from './components/SignOutScreen';
+import { SignOutSuccessScreen } from './components/SignOutSuccessScreen';
 import { ServiceNowAPI } from './services/serviceNowAPI';
-import { VisitorData } from './types';
+import { VisitorData, Location } from './types';
 import { SERVICE_NOW_CONFIG } from './config';
+import { findNearestLocation } from './services/geolocation';
+import { getGoogleReviewUrl } from './services/googleReviewUrl';
+
+type AppScreen = 'sign-in' | 'sign-out' | 'sign-in-success' | 'sign-out-success';
 
 export default function App() {
+  const [currentScreen, setCurrentScreen] = useState<AppScreen>('sign-in');
   const [visitorName, setVisitorName] = useState('');
   const [visitingPerson, setVisitingPerson] = useState('');
   const [purpose, setPurpose] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [signature, setSignature] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [signOutVisitorName, setSignOutVisitorName] = useState('');
+  const [signOutGoogleReviewUrl, setSignOutGoogleReviewUrl] = useState<string | null>(null);
+  const [detectedLocation, setDetectedLocation] = useState<Location | null>(null);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+
+  // Fetch locations and detect user's location on mount
+  useEffect(() => {
+    async function setupLocation() {
+      try {
+        // Fetch locations from ServiceNow
+        const api = new ServiceNowAPI(SERVICE_NOW_CONFIG);
+        const fetchedLocations = await api.fetchLocations();
+        setLocations(fetchedLocations);
+        console.log(`Loaded ${fetchedLocations.length} locations`);
+
+        // Request location permission
+        const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.log('Location permission denied');
+          setIsLoadingLocation(false);
+          return;
+        }
+
+        // Get current position
+        const position = await ExpoLocation.getCurrentPositionAsync({
+          accuracy: ExpoLocation.Accuracy.Balanced,
+        });
+        
+        console.log('User location:', position.coords.latitude, position.coords.longitude);
+
+        // Find nearest location
+        const nearest = findNearestLocation(
+          position.coords.latitude,
+          position.coords.longitude,
+          fetchedLocations
+        );
+
+        if (nearest) {
+          setDetectedLocation(nearest);
+          console.log('Detected facility:', nearest.name);
+        } else {
+          console.log('No nearby location found');
+        }
+      } catch (error) {
+        console.error('Error setting up location:', error);
+      } finally {
+        setIsLoadingLocation(false);
+      }
+    }
+
+    setupLocation();
+  }, []);
 
   const handleSignatureComplete = (signatureData: string) => {
     setSignature(signatureData);
@@ -74,6 +134,7 @@ export default function App() {
         purpose,
         phoneNumber,
         signature,
+        location: detectedLocation?.sys_id,
       };
 
       console.log('Creating ServiceNow API instance...');
@@ -82,7 +143,7 @@ export default function App() {
       const result = await api.submitVisitorSignIn(visitorData);
 
       console.log('Submission successful:', result);
-      setShowSuccess(true);
+      setCurrentScreen('sign-in-success');
     } catch (error) {
       console.error('Submission error:', error);
       console.error('Error details:', error);
@@ -101,11 +162,85 @@ export default function App() {
     setPurpose('');
     setPhoneNumber('');
     setSignature('');
-    setShowSuccess(false);
+    setCurrentScreen('sign-in');
   };
 
-  if (showSuccess) {
-    return <SuccessScreen visitorName={visitorName} onNewVisitor={handleNewVisitor} />;
+  const handleDoneSignIn = () => {
+    setVisitorName('');
+    setVisitingPerson('');
+    setPurpose('');
+    setPhoneNumber('');
+    setSignature('');
+    setCurrentScreen('sign-in');
+  };
+
+  const handleSignOutClick = () => {
+    setCurrentScreen('sign-out');
+  };
+
+  const handleSignOutCancel = () => {
+    setCurrentScreen('sign-in');
+  };
+
+  const handleSignOut = async (name: string) => {
+    try {
+      const api = new ServiceNowAPI(SERVICE_NOW_CONFIG);
+      await api.submitVisitorSignOut(name);
+      setSignOutVisitorName(name);
+      
+      // Get Google review URL from detected location
+      if (detectedLocation) {
+        const reviewUrl = getGoogleReviewUrl(detectedLocation);
+        setSignOutGoogleReviewUrl(reviewUrl);
+        console.log('Generated review URL for:', detectedLocation.name, reviewUrl);
+      } else {
+        console.log('No location detected for review URL');
+      }
+      
+      setCurrentScreen('sign-out-success');
+    } catch (error) {
+      console.error('Sign-out error:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to sign out. Please try again.'
+      );
+      throw error;
+    }
+  };
+
+  const handleDoneSignOut = () => {
+    setSignOutVisitorName('');
+    setSignOutGoogleReviewUrl(null);
+    setCurrentScreen('sign-in');
+  };
+
+  if (currentScreen === 'sign-in-success') {
+    return (
+      <SuccessScreen 
+        visitorName={visitorName} 
+        onNewVisitor={handleNewVisitor}
+        onDone={handleDoneSignIn}
+      />
+    );
+  }
+
+  if (currentScreen === 'sign-out') {
+    return (
+      <SignOutScreen
+        onSignOut={handleSignOut}
+        onCancel={handleSignOutCancel}
+      />
+    );
+  }
+
+  if (currentScreen === 'sign-out-success') {
+    return (
+      <SignOutSuccessScreen
+        visitorName={signOutVisitorName}
+        googleReviewUrl={signOutGoogleReviewUrl}
+        onDone={handleDoneSignOut}
+      />
+    );
   }
 
   return (
@@ -121,6 +256,12 @@ export default function App() {
         <View style={styles.header}>
           <Text style={styles.title}>Visitor Sign-In</Text>
           <Text style={styles.subtitle}>Please complete all fields</Text>
+          {isLoadingLocation && (
+            <Text style={styles.locationText}>Detecting location...</Text>
+          )}
+          {!isLoadingLocation && detectedLocation && (
+            <Text style={styles.locationText}>📍 {detectedLocation.name}</Text>
+          )}
         </View>
 
         <View style={styles.form}>
@@ -180,6 +321,14 @@ export default function App() {
               <Text style={styles.submitButtonText}>Submit Sign-In</Text>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={handleSignOutClick}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.signOutButtonText}>Sign Out</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -209,6 +358,12 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#666',
+  },
+  locationText: {
+    fontSize: 14,
+    color: '#4CAF50',
+    marginTop: 8,
+    fontWeight: '500',
   },
   form: {
     backgroundColor: '#fff',
@@ -247,6 +402,20 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  signOutButton: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#f44336',
+    padding: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  signOutButtonText: {
+    color: '#f44336',
     fontSize: 17,
     fontWeight: '600',
   },
