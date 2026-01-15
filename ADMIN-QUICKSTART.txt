@@ -1,0 +1,55 @@
+=====================================
+VISITOR SIGN-IN APP - ADMIN UI
+Quick Start Guide
+=====================================
+
+📋 WHAT IS THIS?
+A web-based configuration UI for making quick changes to the visitor sign-in app.
+All changes are saved to your source files and version tracked.
+
+🚀 HOW TO START
+
+1. Open PowerShell in this directory
+2. Run: npm run dev-server
+3. Open browser to: http://localhost:3001
+4. Make your changes in the UI
+5. Click "Save Configuration"
+6. Done! Changes are in your code files
+
+✅ WHAT YOU CAN EDIT
+
+- Form field labels and placeholders
+- Field types (text, dropdown, phone, email, etc.)
+- Dropdown options for multiple choice fields
+- Button text
+- App title and subtitle  
+- ServiceNow connection settings
+- Error messages
+- Field order and requirements
+
+📦 WHAT GETS SAVED
+
+When you click save:
+✓ config/formConfig.json gets updated
+✓ package.json version is incremented
+✓ Version history is logged
+✓ Ready to deploy to production
+
+🔢 VERSIONING
+
+- Patch (1.0.X) - Small text changes, bug fixes
+- Minor (1.X.0) - New fields, features
+- Major (X.0.0) - Breaking changes
+
+Version number appears in your app footer!
+
+📤 DEPLOYING TO PRODUCTION
+
+1. Make changes in admin UI
+2. Test locally (npm start)
+3. Zip/send updated files to web dev
+4. Version shows in prod app automatically
+
+🆘 NEED HELP?
+
+See DEV-ADMIN.md for full documentation

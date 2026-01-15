@@ -16,11 +16,13 @@ import { SignaturePad } from './components/SignaturePad';
 import { SuccessScreen } from './components/SuccessScreen';
 import { SignOutScreen } from './components/SignOutScreen';
 import { SignOutSuccessScreen } from './components/SignOutSuccessScreen';
+import { DynamicFormField } from './components/DynamicFormField';
 import { ServiceNowAPI } from './services/serviceNowAPI';
 import { VisitorData, Location } from './types';
 import { SERVICE_NOW_CONFIG } from './config';
 import { findNearestLocation } from './services/geolocation';
 import { getGoogleReviewUrl } from './services/googleReviewUrl';
+import { getAppConfig, getAppVersion } from './utils/configLoader';
 
 type AppScreen = 'sign-in' | 'sign-out' | 'sign-in-success' | 'sign-out-success';
 
@@ -38,6 +40,10 @@ export default function App() {
   const [detectedLocation, setDetectedLocation] = useState<Location | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  
+  // Load configuration
+  const appConfig = getAppConfig();
+  const appVersion = getAppVersion();
 
   // Fetch locations and detect user's location on mount
   useEffect(() => {
@@ -93,23 +99,23 @@ export default function App() {
 
   const validateForm = (): boolean => {
     if (!visitorName.trim()) {
-      Alert.alert('Error', 'Please enter your name');
+      Alert.alert('Error', appConfig.messages.validationErrorName);
       return false;
     }
     if (!visitingPerson.trim()) {
-      Alert.alert('Error', 'Please enter who you are visiting');
+      Alert.alert('Error', appConfig.messages.validationErrorVisiting);
       return false;
     }
     if (!purpose.trim()) {
-      Alert.alert('Error', 'Please enter the purpose of your visit');
+      Alert.alert('Error', appConfig.messages.validationErrorPurpose);
       return false;
     }
     if (!phoneNumber.trim()) {
-      Alert.alert('Error', 'Please enter your phone number');
+      Alert.alert('Error', appConfig.messages.validationErrorPhone);
       return false;
     }
     if (!signature) {
-      Alert.alert('Error', 'Please provide your signature');
+      Alert.alert('Error', appConfig.messages.validationErrorSignature);
       return false;
     }
     return true;
@@ -149,7 +155,7 @@ export default function App() {
       console.error('Error details:', error);
       Alert.alert(
         'Error',
-        'Failed to submit sign-in. Please check your connection and try again.'
+        appConfig.messages.submitError
       );
     } finally {
       setIsSubmitting(false);
@@ -254,56 +260,51 @@ export default function App() {
         scrollEnabled={scrollEnabled}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Visitor Sign-In</Text>
-          <Text style={styles.subtitle}>Please complete all fields</Text>
+          <Text style={styles.title}>{appConfig.app.title}</Text>
+          <Text style={styles.subtitle}>{appConfig.app.subtitle}</Text>
           {isLoadingLocation && (
-            <Text style={styles.locationText}>Detecting location...</Text>
+            <Text style={styles.locationText}>{appConfig.messages.locationDetecting}</Text>
           )}
           {!isLoadingLocation && detectedLocation && (
             <Text style={styles.locationText}>📍 {detectedLocation.name}</Text>
           )}
+          <Text style={styles.versionText}>v{appVersion}</Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>Your Name *</Text>
-          <TextInput
-            style={styles.input}
+          <Text style={styles.label}>{appConfig.formFields[0].label} *</Text>
+          <DynamicFormField
+            field={appConfig.formFields[0]}
             value={visitorName}
             onChangeText={setVisitorName}
-            placeholder="Enter your full name"
-            autoCapitalize="words"
+            style={styles.input}
           />
 
-          <Text style={styles.label}>Visiting *</Text>
-          <TextInput
-            style={styles.input}
+          <Text style={styles.label}>{appConfig.formFields[1].label} *</Text>
+          <DynamicFormField
+            field={appConfig.formFields[1]}
             value={visitingPerson}
             onChangeText={setVisitingPerson}
-            placeholder="Who are you here to see?"
-            autoCapitalize="words"
+            style={styles.input}
           />
 
-          <Text style={styles.label}>Purpose of Visit *</Text>
-          <TextInput
-            style={styles.input}
+          <Text style={styles.label}>{appConfig.formFields[2].label} *</Text>
+          <DynamicFormField
+            field={appConfig.formFields[2]}
             value={purpose}
             onChangeText={setPurpose}
-            placeholder="Reason for visit"
-            autoCapitalize="sentences"
+            style={styles.input}
           />
 
-          <Text style={styles.label}>Phone Number *</Text>
-          <TextInput
-            style={styles.input}
+          <Text style={styles.label}>{appConfig.formFields[3].label} *</Text>
+          <DynamicFormField
+            field={appConfig.formFields[3]}
             value={phoneNumber}
             onChangeText={setPhoneNumber}
-            placeholder="(555) 123-4567"
-            keyboardType="phone-pad"
-            returnKeyType="done"
-            blurOnSubmit={true}
+            style={styles.input}
           />
 
-          <Text style={styles.label}>Signature *</Text>
+          <Text style={styles.label}>{appConfig.formFields[4].label} *</Text>
           <SignaturePad 
             onSignatureComplete={handleSignatureComplete}
             onDrawStart={() => setScrollEnabled(false)}
@@ -318,7 +319,7 @@ export default function App() {
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>Submit Sign-In</Text>
+              <Text style={styles.submitButtonText}>{appConfig.buttons.submit}</Text>
             )}
           </TouchableOpacity>
 
@@ -327,7 +328,7 @@ export default function App() {
             onPress={handleSignOutClick}
             disabled={isSubmitting}
           >
-            <Text style={styles.signOutButtonText}>Sign Out</Text>
+            <Text style={styles.signOutButtonText}>{appConfig.buttons.signOut}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -364,6 +365,11 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     marginTop: 8,
     fontWeight: '500',
+  },
+  versionText: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 8,
   },
   form: {
     backgroundColor: '#fff',

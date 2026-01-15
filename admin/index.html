@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visitor Sign-In Admin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      color: #333;
+      font-size: 32px;
+    }
+
+    .version-badge {
+      background: #667eea;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .card h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 24px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      color: #555;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      cursor: pointer;
+    }
+
+    .field-card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid #667eea;
+    }
+
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .field-header h3 {
+      color: #333;
+      font-size: 18px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-success {
+      background: #48bb78;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #38a169;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #f56565;
+      color: white;
+    }
+
+    .btn-warning {
+      background: #ed8936;
+      color: white;
+    }
+
+    .btn-info {
+      background: #4299e1;
+      color: white;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .save-section {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 20px;
+      align-items: flex-end;
+    }
+
+    .save-section .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: slideIn 0.3s ease;
+      z-index: 1000;
+    }
+
+    .notification.success {
+      background: #48bb78;
+    }
+
+    .notification.error {
+      background: #f56565;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .version-history {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .version-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .version-item h4 {
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .version-item p {
+      color: #666;
+      font-size: 13px;
+      margin: 3px 0;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>🛠️ Visitor Sign-In Admin</h1>
+        <p style="color: #666; margin-top: 8px;">Configuration Management</p>
+      </div>
+      <div class="version-badge" id="currentVersion">v1.0.0</div>
+    </div>
+
+    <div class="main-grid">
+      <!-- App Settings -->
+      <div class="card">
+        <h2>App Settings</h2>
+        <div class="form-group">
+          <label>App Title</label>
+          <input type="text" id="appTitle" placeholder="Visitor Sign-In">
+        </div>
+        <div class="form-group">
+          <label>App Subtitle</label>
+          <input type="text" id="appSubtitle" placeholder="Please complete all fields">
+        </div>
+        <div class="form-group">
+          <label>Submit Button Text</label>
+          <input type="text" id="submitButtonText" placeholder="Submit Sign-In">
+        </div>
+        <div class="form-group">
+          <label>Sign Out Button Text</label>
+          <input type="text" id="signOutButtonText" placeholder="Sign Out">
+        </div>
+      </div>
+
+      <!-- ServiceNow Settings -->
+      <div class="card">
+        <h2>ServiceNow Settings</h2>
+        <div class="form-group">
+          <label>Instance URL</label>
+          <input type="text" id="instanceUrl" placeholder="https://instance.service-now.com">
+        </div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="API Username">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="API Password">
+        </div>
+        <div class="form-group">
+          <label>Table Name</label>
+          <input type="text" id="tableName" placeholder="u_visitor_log">
+        </div>
+      </div>
+
+      <!-- Form Fields -->
+      <div class="card full-width">
+        <h2>Form Fields</h2>
+        <div id="formFieldsContainer"></div>
+      </div>
+
+      <!-- Messages -->
+      <div class="card">
+        <h2>Messages</h2>
+        <div class="form-group">
+          <label>Location Detecting</label>
+          <input type="text" id="msgLocationDetecting" placeholder="Detecting location...">
+        </div>
+        <div class="form-group">
+          <label>Submit Success</label>
+          <input type="text" id="msgSubmitSuccess" placeholder="Thank you for signing in!">
+        </div>
+        <div class="form-group">
+          <label>Submit Error</label>
+          <textarea id="msgSubmitError" placeholder="Failed to submit..."></textarea>
+        </div>
+      </div>
+
+      <!-- Version History -->
+      <div class="card">
+        <h2>Version History</h2>
+        <div class="version-history" id="versionHistory"></div>
+      </div>
+    </div>
+
+    <!-- Save Section -->
+    <div class="save-section">
+      <div class="form-group" style="flex: 2;">
+        <label>Change Description</label>
+        <input type="text" id="changeDescription" placeholder="Describe what you changed...">
+      </div>
+      <div class="form-group">
+        <label>Version Increment</label>
+        <select id="versionType">
+          <option value="patch">Patch (1.0.X)</option>
+          <option value="minor">Minor (1.X.0)</option>
+          <option value="major">Major (X.0.0)</option>
+        </select>
+      </div>
+      <button class="btn btn-success" onclick="saveConfig()">💾 Save Configuration</button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3001/api';
+    let currentConfig = null;
+
+    // Load configuration on page load
+    async function loadConfig() {
+      try {
+        const response = await fetch(`${API_URL}/config`);
+        const config = await response.json();
+        currentConfig = config;
+        
+        // Populate form
+        document.getElementById('currentVersion').textContent = `v${config.version}`;
+        document.getElementById('appTitle').value = config.app.title;
+        document.getElementById('appSubtitle').value = config.app.subtitle;
+        document.getElementById('submitButtonText').value = config.buttons.submit;
+        document.getElementById('signOutButtonText').value = config.buttons.signOut;
+        
+        document.getElementById('instanceUrl').value = config.serviceNow.instanceUrl;
+        document.getElementById('username').value = config.serviceNow.username;
+        document.getElementById('password').value = config.serviceNow.password;
+        document.getElementById('tableName').value = config.serviceNow.tableName;
+        
+        document.getElementById('msgLocationDetecting').value = config.messages.locationDetecting;
+        document.getElementById('msgSubmitSuccess').value = config.messages.submitSuccess;
+        document.getElementById('msgSubmitError').value = config.messages.submitError;
+        
+        renderFormFields(config.formFields);
+        loadVersionHistory();
+      } catch (error) {
+        console.error('Error loading config:', error);
+        showNotification('Failed to load configuration', 'error');
+      }
+    }
+
+    // Render form fields
+    function renderFormFields(fields) {
+      const container = document.getElementById('formFieldsContainer');
+      container.innerHTML = '';
+      
+      fields.sort((a, b) => a.order - b.order).forEach((field, index) => {
+        const fieldCard = document.createElement('div');
+        fieldCard.className = 'field-card';
+        
+        // Dropdown options HTML (only show if type is dropdown)
+        const optionsHtml = field.type === 'dropdown' ? `
+          <div class="form-group" style="grid-column: 1 / -1; background: #fff3cd; padding: 15px; border-radius: 8px; border: 2px solid #ffc107;">
+            <label style="color: #856404;">📋 Dropdown Options (one per line)</label>
+            <textarea id="options-${index}" style="min-height: 120px; font-family: monospace; border: 2px solid #ffc107;" onchange="updateFieldOptions(${index}, this.value)">${(field.options || []).join('\n')}</textarea>
+            <small style="color: #856404; display: block; margin-top: 8px;"><strong>💡 Tip:</strong> Enter each option on a new line. Example:<br/>Meeting<br/>Delivery<br/>Interview<br/>Other</small>
+          </div>
+        ` : '';
+        
+        fieldCard.innerHTML = `
+          <div class="field-header">
+            <h3>${field.label || field.id}</h3>
+            <span style="color: #666; font-size: 14px;">Order: ${field.order}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-group">
+              <label>Label</label>
+              <input type="text" value="${field.label}" onchange="updateField(${index}, 'label', this.value)">
+            </div>
+            <div class="form-group">
+              <label>Placeholder</label>
+              <input type="text" value="${field.placeholder || ''}" onchange="updateField(${index}, 'placeholder', this.value)">
+            </div>
+            <div class="form-group">
+              <label>Field Type</label>
+              <select onchange="updateFieldType(${index}, this.value)">
+                <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text Input</option>
+                <option value="dropdown" ${field.type === 'dropdown' ? 'selected' : ''}>Dropdown</option>
+                <option value="phone" ${field.type === 'phone' ? 'selected' : ''}>Phone Number</option>
+                <option value="email" ${field.type === 'email' ? 'selected' : ''}>Email</option>
+                <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
+                <option value="textarea" ${field.type === 'textarea' ? 'selected' : ''}>Text Area</option>
+                <option value="signature" ${field.type === 'signature' ? 'selected' : ''}>Signature Pad</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Order</label>
+              <input type="number" value="${field.order}" onchange="updateField(${index}, 'order', parseInt(this.value))">
+            </div>
+            <div class="form-group">
+              <div class="checkbox-group">
+                <input type="checkbox" ${field.required ? 'checked' : ''} onchange="updateField(${index}, 'required', this.checked)">
+                <label>Required</label>
+              </div>
+            </div>
+          </div>
+          ${optionsHtml}
+        `;
+        container.appendChild(fieldCard);
+      });
+    }
+
+    // Update field value
+    function updateField(index, property, value) {
+      currentConfig.formFields[index][property] = value;
+    }
+
+    // Update field type and re-render
+    function updateFieldType(index, newType) {
+      currentConfig.formFields[index].type = newType;
+      // Initialize options array for dropdown
+      if (newType === 'dropdown' && !currentConfig.formFields[index].options) {
+        currentConfig.formFields[index].options = [];
+      }
+      // Re-render to show/hide options field
+      renderFormFields(currentConfig.formFields);
+    }
+
+    // Update dropdown options
+    function updateFieldOptions(index, optionsText) {
+      const options = optionsText.split('\n').filter(opt => opt.trim() !== '');
+      currentConfig.formFields[index].options = options;
+    }
+
+    // Load version history
+    async function loadVersionHistory() {
+      try {
+        const response = await fetch(`${API_URL}/version-history`);
+        const history = await response.json();
+        
+        const container = document.getElementById('versionHistory');
+        container.innerHTML = '';
+        
+        history.reverse().forEach(item => {
+          const versionItem = document.createElement('div');
+          versionItem.className = 'version-item';
+          versionItem.innerHTML = `
+            <h4>Version ${item.version}</h4>
+            <p>${new Date(item.timestamp).toLocaleString()}</p>
+            <p><strong>${item.changes}</strong></p>
+          `;
+          container.appendChild(versionItem);
+        });
+      } catch (error) {
+        console.error('Error loading version history:', error);
+      }
+    }
+
+    // Save configuration
+    async function saveConfig() {
+      try {
+        // Gather all form values
+        const config = {
+          app: {
+            title: document.getElementById('appTitle').value,
+            subtitle: document.getElementById('appSubtitle').value
+          },
+          buttons: {
+            submit: document.getElementById('submitButtonText').value,
+            signOut: document.getElementById('signOutButtonText').value
+          },
+          serviceNow: {
+            instanceUrl: document.getElementById('instanceUrl').value,
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+            tableName: document.getElementById('tableName').value
+          },
+          messages: {
+            locationDetecting: document.getElementById('msgLocationDetecting').value,
+            submitSuccess: document.getElementById('msgSubmitSuccess').value,
+            submitError: document.getElementById('msgSubmitError').value,
+            validationErrorName: currentConfig.messages.validationErrorName,
+            validationErrorVisiting: currentConfig.messages.validationErrorVisiting,
+            validationErrorPurpose: currentConfig.messages.validationErrorPurpose,
+            validationErrorPhone: currentConfig.messages.validationErrorPhone,
+            validationErrorSignature: currentConfig.messages.validationErrorSignature
+          },
+          formFields: currentConfig.formFields,
+          versionType: document.getElementById('versionType').value,
+          changeDescription: document.getElementById('changeDescription').value || 'Configuration update'
+        };
+        
+        const response = await fetch(`${API_URL}/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification(`Configuration saved! New version: ${result.version}`, 'success');
+          document.getElementById('changeDescription').value = '';
+          setTimeout(() => loadConfig(), 1000);
+        } else {
+          showNotification('Failed to save configuration', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving config:', error);
+        showNotification('Error saving configuration', 'error');
+      }
+    }
+
+    // Show notification
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // Initialize
+    loadConfig();
+  </script>
+</body>
+</html>

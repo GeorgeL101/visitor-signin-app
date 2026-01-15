@@ -1,0 +1,91 @@
+{
+  "app": {
+    "title": "Visitor Sign-In",
+    "subtitle": "Please complete all fields"
+  },
+  "buttons": {
+    "submit": "Submit Sign-In",
+    "signOut": "Sign Out"
+  },
+  "serviceNow": {
+    "instanceUrl": "https://communicaredev.service-now.com",
+    "username": "Visitor Log API",
+    "password": "SportsBook!10",
+    "tableName": "u_visitor_log"
+  },
+  "messages": {
+    "locationDetecting": "Detecting location...",
+    "submitSuccess": "Thank you for signing in!",
+    "submitError": "Failed to submit sign-in. Please check your connection and try again.",
+    "validationErrorName": "Please enter your name",
+    "validationErrorVisiting": "Please enter who you are visiting",
+    "validationErrorPurpose": "Please enter the purpose of your visit",
+    "validationErrorPhone": "Please enter your phone number",
+    "validationErrorSignature": "Please provide your signature"
+  },
+  "formFields": [
+    {
+      "id": "visitorName",
+      "type": "text",
+      "label": "Your Name",
+      "placeholder": "Enter your full name",
+      "required": true,
+      "autoCapitalize": "words",
+      "order": 1
+    },
+    {
+      "id": "visitingPerson",
+      "type": "text",
+      "label": "Visiting",
+      "placeholder": "Who are you here to see?",
+      "required": true,
+      "autoCapitalize": "words",
+      "order": 2
+    },
+    {
+      "id": "purpose",
+      "type": "dropdown",
+      "label": "Purpose of Visit",
+      "placeholder": "Select reason for visit",
+      "required": true,
+      "autoCapitalize": "sentences",
+      "order": 3,
+      "options": [
+        "Test 1",
+        "Test 2",
+        "Test 3"
+      ]
+    },
+    {
+      "id": "phoneNumber",
+      "type": "phone",
+      "label": "Phone Number",
+      "placeholder": "(555) 123-4567",
+      "required": true,
+      "keyboardType": "phone-pad",
+      "order": 4
+    },
+    {
+      "id": "signature",
+      "type": "signature",
+      "label": "Signature",
+      "required": true,
+      "order": 5
+    }
+  ],
+  "versionType": "patch",
+  "changeDescription": "Adding Choices",
+  "version": "1.0.1",
+  "versionHistory": [
+    {
+      "version": "1.0.0",
+      "timestamp": "2026-01-15T03:01:00Z",
+      "changes": "Initial configuration"
+    },
+    {
+      "version": "1.0.1",
+      "timestamp": "2026-01-15T03:17:14.600Z",
+      "changes": "Adding Choices"
+    }
+  ]
+}
