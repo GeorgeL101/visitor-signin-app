@@ -180,6 +180,11 @@
       color: white;
     }
 
+    .btn-danger:hover {
+      background: #e53e3e;
+      transform: translateY(-2px);
+    }
+
     .btn-group {
       display: flex;
       gap: 10px;
@@ -332,7 +337,10 @@
 
       <!-- Form Fields -->
       <div class="card full-width">
-        <h2>Form Fields</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin-bottom: 0;">Form Fields</h2>
+          <button class="btn btn-primary" onclick="addNewField()">➕ Add New Field</button>
+        </div>
         <div id="formFieldsContainer"></div>
       </div>
 
@@ -434,7 +442,10 @@
         fieldCard.innerHTML = `
           <div class="field-header">
             <h3>${field.label || field.id}</h3>
-            <span style="color: #666; font-size: 14px;">Order: ${field.order}</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="color: #666; font-size: 14px;">Order: ${field.order}</span>
+              <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteField(${index})">🗑️ Delete</button>
+            </div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="form-group">
@@ -494,6 +505,36 @@
     function updateFieldOptions(index, optionsText) {
       const options = optionsText.split('\n').filter(opt => opt.trim() !== '');
       currentConfig.formFields[index].options = options;
+    }
+
+    // Add new field
+    function addNewField() {
+      const newOrder = currentConfig.formFields.length > 0 
+        ? Math.max(...currentConfig.formFields.map(f => f.order)) + 1 
+        : 1;
+      
+      const newField = {
+        id: `field_${Date.now()}`,
+        label: 'New Field',
+        placeholder: 'Enter value...',
+        type: 'text',
+        required: false,
+        order: newOrder
+      };
+      
+      currentConfig.formFields.push(newField);
+      renderFormFields(currentConfig.formFields);
+      showNotification('New field added! Remember to save your changes.', 'success');
+    }
+
+    // Delete field
+    function deleteField(index) {
+      const field = currentConfig.formFields[index];
+      if (confirm(`Are you sure you want to delete the field "${field.label}"?`)) {
+        currentConfig.formFields.splice(index, 1);
+        renderFormFields(currentConfig.formFields);
+        showNotification('Field deleted! Remember to save your changes.', 'success');
+      }
     }
 
     // Load version history
