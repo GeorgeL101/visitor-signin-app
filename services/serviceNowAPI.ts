@@ -9,6 +9,7 @@ import {
 import { encode, decode } from 'base-64';
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
+import { getAppConfig } from '../utils/configLoader';
 
 export class ServiceNowAPI {
   private config: ServiceNowConfig;
@@ -60,17 +61,23 @@ export class ServiceNowAPI {
   /**
    * Creates a visitor record in ServiceNow with signature
    */
-  async createVisitorRecord(visitorData: VisitorData): Promise<string> {
+  async createVisitorRecord(visitorData: VisitorData & { [key: string]: any }): Promise<string> {
     const url = `${this.config.instanceUrl}/api/now/table/${this.config.tableName}`;
+    const appConfig = getAppConfig();
 
     const record: ServiceNowRecord = {
-      u_vistor_name: visitorData.visitorName,
-      u_visiting_person: visitorData.visitingPerson,
-      u_purpose: visitorData.purpose,
-      u_phone_number: visitorData.phoneNumber,
       u_sign_in_time: this.getCurrentDateTime(),
-      // Signature will be uploaded separately to the u_signature image field
     };
+
+    // Dynamically map form fields to ServiceNow fields based on config
+    for (const field of appConfig.formFields) {
+      if (field.serviceNowField && field.type !== 'signature') {
+        const value = visitorData[field.id];
+        if (value !== undefined && value !== null) {
+          record[field.serviceNowField] = value;
+        }
+      }
+    }
 
     // Add facility if provided
     if (visitorData.location) {
@@ -320,6 +327,42 @@ export class ServiceNowAPI {
   }
 
   /**
+   * Updates a visitor record with rating
+   */
+  async updateVisitorRating(recordId: string, rating: number): Promise<void> {
+    const url = `${this.config.instanceUrl}/api/now/table/${this.config.tableName}/${recordId}`;
+
+    const updateData = {
+      u_rating: rating.toString(),
+    };
+
+    try {
+      console.log('Updating record with rating:', recordId, rating);
+      
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.getAuthHeader(),
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Update error:', errorText);
+        throw new Error(`Failed to update rating: ${response.status} - ${errorText}`);
+      }
+
+      console.log('Rating recorded successfully');
+    } catch (error) {
+      console.error('Error updating visitor rating:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Updates a visitor record with sign-out information
    */
   async updateVisitorSignOut(recordId: string, visitorName: string): Promise<void> {
@@ -409,9 +452,9 @@ export class ServiceNowAPI {
 
   /**
    * Main method to submit visitor sign-out
-   * Returns the facility sys_id from the visitor record
+   * Returns the record sys_id and facility sys_id
    */
-  async submitVisitorSignOut(visitorName: string): Promise<string | null> {
+  async submitVisitorSignOut(visitorName: string): Promise<{ recordId: string; facilitySysId: string | null }> {
     try {
       // Step 1: Find the most recent record for this visitor today
       const record = await this.findTodaysVisitorRecord(visitorName);
@@ -428,8 +471,11 @@ export class ServiceNowAPI {
       // Step 2: Update the record with sign-out info
       await this.updateVisitorSignOut(record.sys_id, visitorName);
       
-      // Return the facility sys_id if present
-      return record.u_facility || null;
+      // Return both the record ID and facility sys_id
+      return {
+        recordId: record.sys_id,
+        facilitySysId: record.u_facility || null,
+      };
     } catch (error) {
       console.error('Error submitting visitor sign-out:', error);
       throw error;

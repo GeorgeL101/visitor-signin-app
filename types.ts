@@ -34,6 +34,18 @@ export interface ServiceNowRecord {
   u_sign_in_time?: string;
   u_signature?: string; // Base64 image data for image field
   u_facility?: string; // sys_id of the facility/location
+  [key: string]: any; // Allow dynamic fields from config
+}
+
+export interface FormField {
+  id: string;
+  type: string;
+  label: string;
+  placeholder?: string;
+  required?: boolean;
+  order: number;
+  options?: string[];
+  serviceNowField?: string; // ServiceNow field name mapping
 }
 
 export interface ServiceNowResponse {

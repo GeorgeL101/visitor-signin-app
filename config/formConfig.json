@@ -21,7 +21,11 @@
     "validationErrorVisiting": "Please enter who you are visiting",
     "validationErrorPurpose": "Please enter the purpose of your visit",
     "validationErrorPhone": "Please enter your phone number",
-    "validationErrorSignature": "Please provide your signature"
+    "validationErrorSignature": "Please provide your signature",
+    "signInSuccessTitle": "Sign-In Complete!",
+    "signInSuccessMessage": "Your visit has been recorded.",
+    "signOutSuccessTitle": "Sign-Out Complete!",
+    "signOutSuccessMessage": "Your departure has been recorded."
   },
   "formFields": [
     {
@@ -31,7 +35,8 @@
       "placeholder": "Enter your full name",
       "required": true,
       "autoCapitalize": "words",
-      "order": 1
+      "order": 1,
+      "serviceNowField": "u_vistor_name"
     },
     {
       "id": "visitingPerson",
@@ -40,7 +45,8 @@
       "placeholder": "Who are you here to see?",
       "required": true,
       "autoCapitalize": "words",
-      "order": 2
+      "order": 2,
+      "serviceNowField": "u_visiting_person"
     },
     {
       "id": "purpose",
@@ -50,11 +56,21 @@
       "required": true,
       "autoCapitalize": "sentences",
       "order": 3,
+      "serviceNowField": "u_purpose",
       "options": [
         "Test 1",
         "Test 2",
         "Test 3"
       ]
+    },
+    {
+      "id": "field_1769453925775",
+      "label": "Email",
+      "placeholder": "example@email.com",
+      "type": "email",
+      "required": true,
+      "order": 4,
+      "serviceNowField": "u_email"
     },
     {
       "id": "phoneNumber",
@@ -63,19 +79,21 @@
       "placeholder": "(555) 123-4567",
       "required": true,
       "keyboardType": "phone-pad",
-      "order": 4
+      "order": 5,
+      "serviceNowField": "u_phone_number"
     },
     {
       "id": "signature",
       "type": "signature",
       "label": "Signature",
       "required": true,
-      "order": 5
+      "order": 6,
+      "serviceNowField": "u_signature"
     }
   ],
   "versionType": "patch",
-  "changeDescription": "Adding Choices",
-  "version": "1.0.1",
+  "changeDescription": "Configuration update",
+  "version": "1.0.2",
   "versionHistory": [
     {
       "version": "1.0.0",
@@ -86,6 +104,11 @@
       "version": "1.0.1",
       "timestamp": "2026-01-15T03:17:14.600Z",
       "changes": "Adding Choices"
+    },
+    {
+      "version": "1.0.2",
+      "timestamp": "2026-01-26T18:59:41.215Z",
+      "changes": "Configuration update"
     }
   ]
 }

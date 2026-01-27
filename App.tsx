@@ -28,14 +28,11 @@ type AppScreen = 'sign-in' | 'sign-out' | 'sign-in-success' | 'sign-out-success'
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('sign-in');
-  const [visitorName, setVisitorName] = useState('');
-  const [visitingPerson, setVisitingPerson] = useState('');
-  const [purpose, setPurpose] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [signature, setSignature] = useState('');
+  const [formData, setFormData] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [signOutVisitorName, setSignOutVisitorName] = useState('');
+  const [signOutRecordId, setSignOutRecordId] = useState<string | null>(null);
   const [signOutGoogleReviewUrl, setSignOutGoogleReviewUrl] = useState<string | null>(null);
   const [detectedLocation, setDetectedLocation] = useState<Location | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -44,6 +41,9 @@ export default function App() {
   // Load configuration
   const appConfig = getAppConfig();
   const appVersion = getAppVersion();
+  
+  // Get sorted form fields
+  const formFields = appConfig.formFields.sort((a, b) => a.order - b.order);
 
   // Fetch locations and detect user's location on mount
   useEffect(() => {
@@ -94,36 +94,29 @@ export default function App() {
   }, []);
 
   const handleSignatureComplete = (signatureData: string) => {
-    setSignature(signatureData);
+    setFormData(prev => ({ ...prev, signature: signatureData }));
+  };
+  
+  const handleFieldChange = (fieldId: string, value: string) => {
+    setFormData(prev => ({ ...prev, [fieldId]: value }));
   };
 
   const validateForm = (): boolean => {
-    if (!visitorName.trim()) {
-      Alert.alert('Error', appConfig.messages.validationErrorName);
-      return false;
-    }
-    if (!visitingPerson.trim()) {
-      Alert.alert('Error', appConfig.messages.validationErrorVisiting);
-      return false;
-    }
-    if (!purpose.trim()) {
-      Alert.alert('Error', appConfig.messages.validationErrorPurpose);
-      return false;
-    }
-    if (!phoneNumber.trim()) {
-      Alert.alert('Error', appConfig.messages.validationErrorPhone);
-      return false;
-    }
-    if (!signature) {
-      Alert.alert('Error', appConfig.messages.validationErrorSignature);
-      return false;
+    for (const field of formFields) {
+      if (field.required) {
+        const value = formData[field.id];
+        if (!value || !value.trim()) {
+          Alert.alert('Error', `Please enter ${field.label}`);
+          return false;
+        }
+      }
     }
     return true;
   };
 
   const handleSubmit = async () => {
     console.log('Submit button clicked');
-    console.log('Form data:', { visitorName, visitingPerson, purpose, phoneNumber, hasSignature: !!signature });
+    console.log('Form data:', formData);
     
     if (!validateForm()) {
       console.log('Form validation failed');
@@ -134,13 +127,14 @@ export default function App() {
     setIsSubmitting(true);
 
     try {
-      const visitorData: VisitorData = {
-        visitorName,
-        visitingPerson,
-        purpose,
-        phoneNumber,
-        signature,
+      const visitorData: VisitorData & { [key: string]: any } = {
+        visitorName: formData.visitorName || '',
+        visitingPerson: formData.visitingPerson || '',
+        purpose: formData.purpose || '',
+        phoneNumber: formData.phoneNumber || '',
+        signature: formData.signature || '',
         location: detectedLocation?.sys_id,
+        ...formData, // Include all form fields dynamically
       };
 
       console.log('Creating ServiceNow API instance...');
@@ -163,20 +157,12 @@ export default function App() {
   };
 
   const handleNewVisitor = () => {
-    setVisitorName('');
-    setVisitingPerson('');
-    setPurpose('');
-    setPhoneNumber('');
-    setSignature('');
+    setFormData({});
     setCurrentScreen('sign-in');
   };
 
   const handleDoneSignIn = () => {
-    setVisitorName('');
-    setVisitingPerson('');
-    setPurpose('');
-    setPhoneNumber('');
-    setSignature('');
+    setFormData({});
     setCurrentScreen('sign-in');
   };
 
@@ -191,8 +177,9 @@ export default function App() {
   const handleSignOut = async (name: string) => {
     try {
       const api = new ServiceNowAPI(SERVICE_NOW_CONFIG);
-      await api.submitVisitorSignOut(name);
+      const result = await api.submitVisitorSignOut(name);
       setSignOutVisitorName(name);
+      setSignOutRecordId(result.recordId);
       
       // Get Google review URL from detected location
       if (detectedLocation) {
@@ -216,6 +203,7 @@ export default function App() {
 
   const handleDoneSignOut = () => {
     setSignOutVisitorName('');
+    setSignOutRecordId(null);
     setSignOutGoogleReviewUrl(null);
     setCurrentScreen('sign-in');
   };
@@ -223,7 +211,7 @@ export default function App() {
   if (currentScreen === 'sign-in-success') {
     return (
       <SuccessScreen 
-        visitorName={visitorName} 
+        visitorName={formData.visitorName || ''} 
         onNewVisitor={handleNewVisitor}
         onDone={handleDoneSignIn}
       />
@@ -243,6 +231,7 @@ export default function App() {
     return (
       <SignOutSuccessScreen
         visitorName={signOutVisitorName}
+        recordId={signOutRecordId}
         googleReviewUrl={signOutGoogleReviewUrl}
         onDone={handleDoneSignOut}
       />
@@ -272,44 +261,27 @@ export default function App() {
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>{appConfig.formFields[0].label} *</Text>
-          <DynamicFormField
-            field={appConfig.formFields[0]}
-            value={visitorName}
-            onChangeText={setVisitorName}
-            style={styles.input}
-          />
-
-          <Text style={styles.label}>{appConfig.formFields[1].label} *</Text>
-          <DynamicFormField
-            field={appConfig.formFields[1]}
-            value={visitingPerson}
-            onChangeText={setVisitingPerson}
-            style={styles.input}
-          />
-
-          <Text style={styles.label}>{appConfig.formFields[2].label} *</Text>
-          <DynamicFormField
-            field={appConfig.formFields[2]}
-            value={purpose}
-            onChangeText={setPurpose}
-            style={styles.input}
-          />
-
-          <Text style={styles.label}>{appConfig.formFields[3].label} *</Text>
-          <DynamicFormField
-            field={appConfig.formFields[3]}
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            style={styles.input}
-          />
-
-          <Text style={styles.label}>{appConfig.formFields[4].label} *</Text>
-          <SignaturePad 
-            onSignatureComplete={handleSignatureComplete}
-            onDrawStart={() => setScrollEnabled(false)}
-            onDrawEnd={() => setScrollEnabled(true)}
-          />
+          {formFields.map((field) => (
+            <View key={field.id}>
+              <Text style={styles.label}>
+                {field.label} {field.required && '*'}
+              </Text>
+              {field.type === 'signature' ? (
+                <SignaturePad 
+                  onSignatureComplete={handleSignatureComplete}
+                  onDrawStart={() => setScrollEnabled(false)}
+                  onDrawEnd={() => setScrollEnabled(true)}
+                />
+              ) : (
+                <DynamicFormField
+                  field={field}
+                  value={formData[field.id] || ''}
+                  onChangeText={(value) => handleFieldChange(field.id, value)}
+                  style={styles.input}
+                />
+              )}
+            </View>
+          ))}
 
           <TouchableOpacity
             style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}

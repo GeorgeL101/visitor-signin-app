@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { getAppConfig } from '../utils/configLoader';
 
 interface SuccessScreenProps {
   visitorName: string;
@@ -8,14 +9,16 @@ interface SuccessScreenProps {
 }
 
 export const SuccessScreen: React.FC<SuccessScreenProps> = ({ visitorName, onNewVisitor, onDone }) => {
+  const appConfig = getAppConfig();
+  
   return (
     <View style={styles.container}>
       <View style={styles.successBox}>
         <Text style={styles.checkmark}>✓</Text>
-        <Text style={styles.title}>Sign-In Complete!</Text>
+        <Text style={styles.title}>{appConfig.messages.signInSuccessTitle}</Text>
         <Text style={styles.message}>
           Thank you, {visitorName}!{'\n'}
-          Your visit has been recorded.
+          {appConfig.messages.signInSuccessMessage}
         </Text>
         <TouchableOpacity style={styles.button} onPress={onNewVisitor}>
           <Text style={styles.buttonText}>Sign In Another Visitor</Text>
